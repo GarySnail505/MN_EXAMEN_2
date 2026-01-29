@@ -5,6 +5,7 @@ from .linear_sist_methods import (
     matriz_aumentada,
     separar_m_aumentada,
     gauss_jordan,
+    matriz_inversa_gauss_jordan,
 )
 from .min_cuadrados import ajustar_min_cuadrados  # type: ignore
 

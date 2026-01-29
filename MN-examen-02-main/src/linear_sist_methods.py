@@ -315,32 +315,35 @@ def separar_m_aumentada(Ab: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 
-def _matriz_inv_gauss_jordan(A: np.ndarray) -> np.ndarray:
-    """Resuelve un sistema de ecuaciones lineales mediante el método de Gauss-Jordan.
+def matriz_inversa_gauss_jordan(A: np.ndarray) -> np.ndarray:
+    """Calcula la inversa de una matriz cuadrada A utilizando el método de Gauss-Jordan.
 
     ## Parameters
 
-    ``A``: matriz aumentada del sistema de ecuaciones lineales. Debe ser de tamaño n-by-(n+1), donde n es el número de incógnitas.
+    ``A``: matriz cuadrada de tamaño n-by-n.
 
     ## Return
 
-    ``solucion``: vector con la solución del sistema de ecuaciones lineales.
+    ``A_inv``: inversa de la matriz A.
 
     """
     if not isinstance(A, np.ndarray):
         logging.debug("Convirtiendo A a numpy array.")
-        A = np.array(
-            A, dtype=float
-        )  # convertir en float, porque si no, convierte en enteros
-    assert A.shape[0] == A.shape[1] - 1, "La matriz A debe ser de tamaño n-by-(n+1)."
+        A = np.array(A, dtype=float)
+    assert A.shape[0] == A.shape[1], "La matriz A debe ser cuadrada."
     n = A.shape[0]
 
+    # Construir la matriz aumentada [A | I]
+    I = np.eye(n)
+    Ab = np.hstack((A, I))
+
+    # Aplicar Gauss-Jordan
     for i in range(0, n):  # loop por columna
 
         # --- encontrar pivote
         p = None  # default, first element
         for pi in range(i, n):
-            if A[pi, i] == 0:
+            if Ab[pi, i] == 0:
                 # must be nonzero
                 continue
 
@@ -349,40 +352,33 @@ def _matriz_inv_gauss_jordan(A: np.ndarray) -> np.ndarray:
                 p = pi
                 continue
 
-            if abs(A[pi, i]) < abs(A[p, i]):
+            if abs(Ab[pi, i]) < abs(Ab[p, i]):
                 p = pi
 
         if p is None:
             # no pivot found.
-            logging.info(f"\n{A}")
-            raise ValueError("No existe solución única.")
+            raise ValueError("La matriz no es invertible.")
 
         if p != i:
             logging.info(f"Intercambiando filas {i} y {p}.")
             # swap rows
-            _aux = A[i, :].copy()
-            A[i, :] = A[p, :].copy()
-            A[p, :] = _aux
+            _aux = Ab[i, :].copy()
+            Ab[i, :] = Ab[p, :].copy()
+            Ab[p, :] = _aux
 
         # --- Eliminación: loop por fila
         for j in range(n):
             if i == j:
                 continue
-            m = A[j, i] / A[i, i]
-            A[j, i:] = A[j, i:] - m * A[i, i:]
+            m = Ab[j, i] / Ab[i, i]
+            Ab[j, i:] = Ab[j, i:] - m * Ab[i, i:]
 
-        logging.info(f"\n{A}")
+        logging.info(f"\n{Ab}")
 
-    if A[n - 1, n - 1] == 0:
-        # Sin embargo, esto solo se accede al finalizar la matriz... Con todos los pivotes
-        if A[n - 1, n] == 0:
-            raise ValueError("Infinitas soluciones.")
-        else:
-            raise ValueError("Sin solución.")
-
-    # --- Sustitución hacia atrás
-    solucion = np.zeros(n)
+    # --- Normalizar filas
     for i in range(n):
-        solucion[i] = A[i, n] / A[i, i]
+        Ab[i, :] = Ab[i, :] / Ab[i, i]
 
-    return solucion
+    A_inv = Ab[:, n:]
+
+    return A_inv
